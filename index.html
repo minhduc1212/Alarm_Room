@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Alarm Status</title>
+    <style>
+        body {
+            background: #0f0f13;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            width: 300px;
+        }
+        h1 { margin-top: 0; font-size: 24px; color: #ff4a4a; }
+        .status { font-size: 18px; margin-top: 20px; color: #888; }
+        .ringing { color: #ff4a4a; font-weight: bold; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div class="glass-panel">
+        <h1>SYSTEM STATUS</h1>
+        <div id="status-text" class="status">Monitoring...</div>
+    </div>
+
+    <!-- Drop a loud Juice WRLD or Mac Miller track in the folder and link it here -->
+    <audio id="alarm-audio" loop>
+        <source src="alarm-track.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const statusText = document.getElementById('status-text');
+        const audio = document.getElementById('alarm-audio');
+        let isAudioPlaying = false;
+
+        setInterval(async () => {
+            try {
+                const response = await fetch('http://localhost:3000/status');
+                const data = await response.json();
+
+                if (data.ringing) {
+                    statusText.innerText = "ALARM ACTIVE. HACK TO DISARM.";
+                    statusText.className = "status ringing";
+                    if (!isAudioPlaying) {
+                        audio.play();
+                        isAudioPlaying = true;
+                    }
+                } else {
+                    statusText.innerText = "Dormant. Sleep well.";
+                    statusText.className = "status";
+                    if (isAudioPlaying) {
+                        audio.pause();
+                        audio.currentTime = 0;
+                        isAudioPlaying = false;
+                    }
+                }
+            } catch (err) {
+                statusText.innerText = "Server Offline.";
+            }
+        }, 2000); // Polls the server every 2 seconds
+    </script>
+</body>
+</html>
