@@ -31,6 +31,18 @@
         .status { font-size: 18px; margin-top: 20px; color: #888; }
         .ringing { color: #ff4a4a; font-weight: bold; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0; } }
+
+        .control-panel { margin-top: 25px; display: flex; flex-direction: column; gap: 10px; }
+        input[type="time"] {
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white; padding: 8px; border-radius: 5px; font-family: inherit; text-align: center;
+        }
+        button {
+            background: #4a76ff; color: white; border: none; padding: 10px; border-radius: 5px;
+            cursor: pointer; font-family: inherit; font-weight: bold; transition: background 0.2s;
+        }
+        button:hover { background: #2a56df; }
+        .message { margin-top: 10px; font-size: 14px; color: #aaffaa; min-height: 16px; }
     </style>
 </head>
 <body>
@@ -38,6 +50,11 @@
     <div class="glass-panel">
         <h1>SYSTEM STATUS</h1>
         <div id="status-text" class="status">Monitoring...</div>
+        <div class="control-panel">
+            <input type="time" id="alarm-time">
+            <button id="set-alarm-btn">SET ALARM</button>
+            <div id="message" class="message"></div>
+        </div>
     </div>
 
     <!-- Drop a loud Juice WRLD or Mac Miller track in the folder and link it here -->
@@ -49,6 +66,34 @@
         const statusText = document.getElementById('status-text');
         const audio = document.getElementById('alarm-audio');
         let isAudioPlaying = false;
+
+        const setAlarmBtn = document.getElementById('set-alarm-btn');
+        const alarmTimeInput = document.getElementById('alarm-time');
+        const messageDiv = document.getElementById('message');
+
+        setAlarmBtn.addEventListener('click', async () => {
+            const time = alarmTimeInput.value;
+            if (!time) {
+                messageDiv.innerText = "Please select a time.";
+                return;
+            }
+            
+            // Lợi dụng cú click này để mở khóa quyền phát nhạc của trình duyệt luôn
+            audio.play().then(() => audio.pause()).catch(() => {});
+
+            try {
+                const response = await fetch('http://localhost:3000/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ time: time })
+                });
+                const data = await response.json();
+                messageDiv.innerText = data.message;
+                setTimeout(() => messageDiv.innerText = '', 4000); // Ẩn lời nhắn sau 4 giây
+            } catch (err) {
+                messageDiv.innerText = "Error connecting to server.";
+            }
+        });
 
         setInterval(async () => {
             try {
