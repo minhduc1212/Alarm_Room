@@ -1,70 +1,68 @@
-# Escape Room Alarm API
+# Hacker Alarm - The Only Way to Wake Up
 
-A fun, puzzle-based alarm clock built with Node.js and Express. When the alarm rings, you can't just press a button to turn it off—you have to interact with the API to find a clue, decode a base64 string, and submit the correct key to disarm it!
+## The Struggle is Real
+Let's be honest: my morning routine usually involves setting an alarm, hearing it, and then instantly turning it off while still half-asleep just to get "five more minutes." Those five minutes inevitably turn into an hour, and the cycle continues.
 
-## Prerequisites
+This project is a direct response to that behavior. It's not just an alarm; it's a security challenge. To stop the noise, I have to wake up my brain enough to perform a series of API requests and "hack" the system. No more mindless tapping to snooze.
 
-- [Node.js](https://nodejs.org/) installed on your machine.
+## How It Works
+This is a simple Express-based alarm system that requires a multi-step disarm process via an API.
 
-## Installation
+1.  **Set the Alarm:** Use the web interface (running on `index.html`) to set a wake-up time.
+2.  **The Trigger:** When the time hits, the server generates a random hex passcode and starts playing `alarm-track.mp3`.
+3.  **The Lockdown:** Attempting to hit the `/disarm` endpoint will return a `423 LOCKED` status.
+4.  **The Clue:** You must request `/clue` to receive a Base64 encoded payload.
+5.  **The Hack:** Decode the payload (your brain starts working here!) and `POST` the result to `/unlock` with the key.
+6.  **Silence:** Only a correct key will stop the alarm.
 
-1. Navigate to the project directory:
-   ```bash
-   cd 
-   ```
-2. Initialize a `package.json` if you haven't already:
-   ```bash
-   npm init -y
-   ```
-3. Install the required dependencies:
-   ```bash
-   npm install express cors
-   ```
-4. Ensure you have an `index.html` file in the same directory (as required by the `/` endpoint).
+## Technical Stack
+- **Backend:** Node.js with Express
+- **Frontend:** Vanilla JS & CSS (Glassmorphism design)
+- **Features:** 
+    - RESTful API for alarm control
+    - Base64 puzzle generation
+    - Real-time status polling
 
-## How to Run
-
-Start the server by running:
-```bash
-node server.js
-```
-The API will be available at `http://localhost:3000`.
-
-## API Endpoints & "The Game"
-
-Here is the sequence of endpoints you'll interact with to play the escape room alarm game.
+## Command Line Usage
+If you prefer the terminal (or need to automate your wake-up hack), use these `curl` commands:
 
 ### 1. Set the Alarm
-- **URL:** `/set`
-- **Method:** `POST`
-- **Body (JSON):** `{ "time": "HH:MM" }` (e.g., `{ "time": "14:30" }`)
-- **Description:** Sets the alarm time. The server checks the time every minute.
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"time":"07:30"}' http://localhost:3000/set
+```
 
-### 2. Check Status
-- **URL:** `/status`
-- **Method:** `GET`
-- **Description:** Returns whether the alarm is currently ringing (`{ "ringing": true/false }`).
+### 2. Check Alarm Status
+```bash
+curl http://localhost:3000/status
+```
 
-### 3. Try to Disarm
-- **URL:** `/disarm`
-- **Method:** `GET`
-- **Description:** If the alarm is ringing, this will fail with a `423 LOCKED` status and instruct you to go to `/clue`.
+### 3. Get the Clue (When Ringing)
+```bash
+curl http://localhost:3000/clue
+```
 
-### 4. Get the Clue
-- **URL:** `/clue`
-- **Method:** `GET`
-- **Description:** Returns a JSON object containing a base64-encoded payload and instructions on what to do next.
-- **Example Response:**
-  ```json
-  {
-    "hint": "Decode this base64 string.",
-    "payload": "NEQyQQ==",
-    "next_step": "POST the decoded string to /unlock inside a 'key' JSON property."
-  }
-  ```
+### 4. Unlock/Disarm
+Replace `YOUR_DECODED_KEY` with the result of decoding the Base64 payload from the clue.
+```bash
+curl -X POST -H "Content-Type: application/json" -d '{"key":"YOUR_DECODED_KEY"}' http://localhost:3000/unlock
+```
 
-### 5. Unlock (Disarm the Alarm)
-- **URL:** `/unlock`
-- **Method:** `POST`
-- **Body (JSON):** `{ "key": "<decoded_string>" }`
-- **Description:** Submit the decoded passcode to turn off the alarm. If successful, the alarm stops ringing!
+## Setup
+1.  Clone the repository.
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+3.  Place your loudest wake-up track as `alarm-track.mp3` in the root directory.
+4.  Start the server:
+    ```bash
+    node server.js
+    ```
+5.  Open `http://localhost:3000` in your browser.
+
+## TODO
+- [x] Basic Express server and alarm logic
+- [x] Frontend for setting time and monitoring status
+- [x] Base64 "hacking" disarm flow
+- [ ] Add more complex puzzles
+- [ ] Implement "uncloseable" browser window features
