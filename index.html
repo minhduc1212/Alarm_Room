@@ -3,123 +3,837 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Alarm Status</title>
+    <title>Alarm Clock</title>
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#090d16">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Alarm Room">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
+    <link rel="alternate icon" type="image/png" href="/icons/icon-192.png">
     <style>
-        body {
-            background: #0f0f13;
-            color: #ffffff;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        :root {
+            --bg: #090d16;
+            --surface: #111726;
+            --surface-hover: #172033;
+            --border: #232d42;
+            --border-focus: #3b82f6;
+            --text: #f1f5f9;
+            --text-muted: #8492a6;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #dc2626;
+            --danger-bg: rgba(220, 38, 38, 0.15);
+            --success: #16a34a;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: ui-monospace, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow-x: hidden;
+        }
+
+        /* Main Focused Clock Card */
+        .clock-container {
+            width: 100%;
+            max-width: 460px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+            text-align: center;
+        }
+
+        /* User's Local Time Display */
+        .time-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .local-time {
+            font-family: var(--font-mono);
+            font-size: 4rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            line-height: 1;
+        }
+
+        .local-date {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* Status Pill */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            transition: all 0.2s ease;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #64748b;
+        }
+
+        .status-pill.active {
+            color: #60a5fa;
+            border-color: rgba(59, 130, 246, 0.4);
+            background: rgba(37, 99, 235, 0.1);
+        }
+        .status-pill.active .status-dot {
+            background: #3b82f6;
+        }
+
+        .status-pill.ringing {
+            color: #f87171;
+            border-color: rgba(220, 38, 38, 0.4);
+            background: var(--danger-bg);
+        }
+        .status-pill.ringing .status-dot {
+            background: #ef4444;
+        }
+
+        /* Settings Panel */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            text-align: left;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 600;
+        }
+
+        input[type="time"], select {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            width: 100%;
+            transition: border-color 0.15s ease;
+        }
+
+        input[type="time"] {
+            font-family: var(--font-mono);
+            font-size: 1.3rem;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        input[type="time"]:focus, select:focus {
+            border-color: var(--border-focus);
+        }
+
+        /* Track row */
+        .track-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .track-row select {
+            flex: 1;
+        }
+
+        button {
+            font-family: inherit;
+            font-size: 0.88rem;
+            font-weight: 500;
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-preview {
+            background: var(--surface-hover);
+            border-color: var(--border);
+            color: var(--text);
+            min-width: 68px;
+        }
+        .btn-preview:hover {
+            background: #1f2a40;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-muted);
+            border-color: var(--border);
+        }
+        .btn-secondary:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .feedback-msg {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            min-height: 16px;
+        }
+
+        /* Challenge Modal / Overlay (Hidden until Alarm triggers) */
+        .challenge-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(9, 13, 22, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 1;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .challenge-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .challenge-card {
+            background: var(--surface);
+            border: 1px solid rgba(220, 38, 38, 0.5);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 680px;
+            height: 520px;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 40px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-            width: 300px;
-        }
-        h1 { margin-top: 0; font-size: 24px; color: #ff4a4a; }
-        .status { font-size: 18px; margin-top: 20px; color: #888; }
-        .ringing { color: #ff4a4a; font-weight: bold; animation: blink 1s infinite; }
-        @keyframes blink { 50% { opacity: 0; } }
 
-        .control-panel { margin-top: 25px; display: flex; flex-direction: column; gap: 10px; }
-        input[type="time"] {
-            background: rgba(0,0,0,0.3); border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white; padding: 8px; border-radius: 5px; font-family: inherit; text-align: center;
+        .challenge-header {
+            background: #0d121c;
+            border-bottom: 1px solid var(--border);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        button {
-            background: #4a76ff; color: white; border: none; padding: 10px; border-radius: 5px;
-            cursor: pointer; font-family: inherit; font-weight: bold; transition: background 0.2s;
+
+        .challenge-tag {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #f87171;
+            background: var(--danger-bg);
+            padding: 3px 8px;
+            border-radius: 4px;
         }
-        button:hover { background: #2a56df; }
-        .message { margin-top: 10px; font-size: 14px; color: #aaffaa; min-height: 16px; }
+
+        .challenge-title {
+            font-size: 0.85rem;
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        .terminal-body {
+            flex: 1;
+            padding: 16px;
+            background: #060911;
+            font-family: var(--font-mono);
+            font-size: 0.84rem;
+            line-height: 1.6;
+            overflow-y: auto;
+            color: #cbd5e1;
+        }
+
+        .term-line {
+            word-break: break-all;
+            white-space: pre-wrap;
+            margin-bottom: 2px;
+        }
+
+        .term-prompt { color: var(--text-muted); }
+        .term-cmd { color: #ffffff; font-weight: 500; }
+        .term-info { color: #60a5fa; }
+        .term-success { color: #4ade80; }
+        .term-warn { color: #fbbf24; }
+        .term-error { color: #f87171; }
+        .term-muted { color: #64748b; }
+
+        .terminal-shortcuts {
+            background: #090d16;
+            border-top: 1px solid var(--border);
+            padding: 8px 14px;
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+        }
+
+        .btn-chip {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+        .btn-chip:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+            border-color: #3b475c;
+        }
+
+        .terminal-input-row {
+            display: flex;
+            align-items: center;
+            background: #090d16;
+            border-top: 1px solid var(--border);
+            padding: 10px 14px;
+            gap: 10px;
+        }
+
+        .terminal-prompt-label {
+            font-family: var(--font-mono);
+            font-size: 0.88rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-family: var(--font-mono);
+            font-size: 0.88rem;
+            color: var(--text);
+            caret-color: var(--primary);
+        }
     </style>
 </head>
 <body>
 
-    <div class="glass-panel">
-        <h1>SYSTEM STATUS</h1>
-        <div id="status-text" class="status">Monitoring...</div>
-        <div class="control-panel">
-            <input type="time" id="alarm-time">
-            <button id="set-alarm-btn">SET ALARM</button>
-            <div id="message" class="message"></div>
+    <!-- Center Clock & Settings Container -->
+    <div class="clock-container">
+        <!-- User's Local Time -->
+        <div class="time-wrapper">
+            <div id="local-time" class="local-time">00:00:00</div>
+            <div id="local-date" class="local-date">Loading...</div>
+        </div>
+
+        <!-- Alarm Status Indicator -->
+        <div id="status-pill" class="status-pill">
+            <span class="status-dot"></span>
+            <span id="status-text">No alarm set</span>
+        </div>
+
+        <!-- Alarm Configuration Card -->
+        <div class="panel">
+            <div class="field">
+                <label for="alarm-time">Wake-up Time</label>
+                <input type="time" id="alarm-time">
+            </div>
+
+            <div class="field">
+                <label for="track-select">Alarm Track</label>
+                <div class="track-row">
+                    <select id="track-select">
+                        <option value="digital-beep">Digital Beep</option>
+                    </select>
+                    <button id="btn-preview" type="button" class="btn-preview">Play</button>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button id="btn-set" class="btn-primary">Set Alarm</button>
+                <button id="btn-cancel" class="btn-secondary">Cancel</button>
+            </div>
+
+            <div id="feedback-msg" class="feedback-msg"></div>
         </div>
     </div>
 
-    <!-- Drop a loud Juice WRLD or Mac Miller track in the folder and link it here -->
-    <audio id="alarm-audio" loop>
-        <source src="alarm-track.mp3" type="audio/mpeg">
+    <!-- Hidden Challenge Overlay (Only appears when the alarm rings) -->
+    <div id="challenge-overlay" class="challenge-overlay hidden">
+        <div class="challenge-card">
+            <div class="challenge-header">
+                <div>
+                    <span class="challenge-tag">Wake-up Challenge</span>
+                    <span class="challenge-title" style="margin-left: 8px;">Terminal Disarm</span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Disarm required to silence alarm</div>
+            </div>
+
+            <div class="terminal-body" id="terminal-body">
+                <div class="term-line term-error">ALARM IS RINGING!</div>
+                <div class="term-line term-muted">Solve this terminal challenge to turn it off:</div>
+                <div class="term-line term-muted">1. Type <span class="term-info">clue</span> to find the encoded key</div>
+                <div class="term-line term-muted">2. Type <span class="term-info">decode &lt;payload&gt;</span> to reveal plaintext</div>
+                <div class="term-line term-muted">3. Type <span class="term-info">unlock &lt;key&gt;</span> to silence the alarm</div>
+                <div class="term-line">&nbsp;</div>
+            </div>
+
+            <div class="terminal-shortcuts">
+                <button class="btn-chip" onclick="quickFill('clue')">clue</button>
+                <button class="btn-chip" onclick="quickFill('decode ')">decode &lt;b64&gt;</button>
+                <button class="btn-chip" onclick="quickFill('unlock ')">unlock &lt;key&gt;</button>
+                <button class="btn-chip" onclick="quickFill('status')">status</button>
+                <button class="btn-chip" onclick="quickFill('help')">help</button>
+                <button class="btn-chip" onclick="executeCmd('clear')">clear</button>
+            </div>
+
+            <div class="terminal-input-row">
+                <span class="terminal-prompt-label">$</span>
+                <input type="text" id="terminal-input" class="terminal-input" placeholder="Type clue, decode <b64>, unlock <key>..." autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Elements -->
+    <audio id="alarm-audio" loop preload="auto">
+        <source id="audio-source" src="tracks/digital-beep.wav" type="audio/wav">
     </audio>
+    <audio id="preview-audio" preload="auto"></audio>
 
     <script>
+        // State
+        let isRinging = false;
+        let tracksList = [];
+        let selectedTrack = null;
+        let isPreviewPlaying = false;
+        let targetAlarmTime = null;
+        const history = [];
+        let historyIndex = -1;
+
+        // Elements
+        const localTime = document.getElementById('local-time');
+        const localDate = document.getElementById('local-date');
+        const statusPill = document.getElementById('status-pill');
         const statusText = document.getElementById('status-text');
-        const audio = document.getElementById('alarm-audio');
-        let isAudioPlaying = false;
-
-        const setAlarmBtn = document.getElementById('set-alarm-btn');
         const alarmTimeInput = document.getElementById('alarm-time');
-        const messageDiv = document.getElementById('message');
+        const trackSelect = document.getElementById('track-select');
+        const btnPreview = document.getElementById('btn-preview');
+        const btnSet = document.getElementById('btn-set');
+        const btnCancel = document.getElementById('btn-cancel');
+        const feedbackMsg = document.getElementById('feedback-msg');
+        const challengeOverlay = document.getElementById('challenge-overlay');
+        const terminalBody = document.getElementById('terminal-body');
+        const terminalInput = document.getElementById('terminal-input');
+        const audio = document.getElementById('alarm-audio');
+        const audioSource = document.getElementById('audio-source');
+        const previewAudio = document.getElementById('preview-audio');
 
-        setAlarmBtn.addEventListener('click', async () => {
-            const time = alarmTimeInput.value;
-            if (!time) {
-                messageDiv.innerText = "Please select a time.";
-                return;
-            }
-            
-            // Lợi dụng cú click này để mở khóa quyền phát nhạc của trình duyệt luôn
-            audio.play().then(() => audio.pause()).catch(() => {});
+        // Prime audio permissions on first user gesture
+        function primeAudio() {
+            audio.play().then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+            }).catch(() => {});
+        }
+        document.addEventListener('click', primeAudio, { once: true });
+        document.addEventListener('keydown', primeAudio, { once: true });
 
-            try {
-                const response = await fetch('http://localhost:3000/set', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ time: time })
-                });
-                const data = await response.json();
-                messageDiv.innerText = data.message;
-                setTimeout(() => messageDiv.innerText = '', 4000); // Ẩn lời nhắn sau 4 giây
-            } catch (err) {
-                messageDiv.innerText = "Error connecting to server.";
+        // Update User's Local Clock (Client timezone)
+        function updateClock() {
+            const now = new Date();
+            localTime.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+            localDate.textContent = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+        }
+        updateClock();
+        setInterval(updateClock, 300);
+
+        // Anti-close tab protection when ringing
+        window.addEventListener('beforeunload', (e) => {
+            if (isRinging) {
+                e.preventDefault();
+                e.returnValue = "Alarm is currently ringing. You must solve the challenge to turn it off.";
+                return e.returnValue;
             }
         });
 
+        // Tracks Management
+        async function loadTracks() {
+            try {
+                const res = await fetch('/tracks');
+                const data = await res.json();
+                tracksList = data.tracks;
+                selectedTrack = data.selectedTrack;
+
+                trackSelect.innerHTML = '';
+                tracksList.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t.id;
+                    opt.textContent = t.name;
+                    if (selectedTrack && selectedTrack.id === t.id) {
+                        opt.selected = true;
+                    }
+                    trackSelect.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Failed to load tracks:', e);
+            }
+        }
+
+        trackSelect.addEventListener('change', async () => {
+            const trackId = trackSelect.value;
+            try {
+                const res = await fetch('/tracks/select', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ trackId })
+                });
+                const data = await res.json();
+                if (data.selectedTrack) {
+                    selectedTrack = data.selectedTrack;
+                    audioSource.src = selectedTrack.file;
+                    audio.load();
+                }
+            } catch (e) {
+                console.error('Track change error:', e);
+            }
+        });
+
+        btnPreview.addEventListener('click', () => {
+            if (isPreviewPlaying) {
+                previewAudio.pause();
+                previewAudio.currentTime = 0;
+                isPreviewPlaying = false;
+                btnPreview.textContent = 'Play';
+            } else {
+                const track = tracksList.find(t => t.id === trackSelect.value) || selectedTrack;
+                if (!track) return;
+                previewAudio.src = track.file;
+                previewAudio.play().then(() => {
+                    isPreviewPlaying = true;
+                    btnPreview.textContent = 'Stop';
+                }).catch(() => {
+                    feedbackMsg.textContent = 'Click to enable audio playback.';
+                });
+                previewAudio.onended = () => {
+                    isPreviewPlaying = false;
+                    btnPreview.textContent = 'Play';
+                };
+            }
+        });
+
+        // Alarm Controls
+        btnSet.addEventListener('click', async () => {
+            const time = alarmTimeInput.value;
+            if (!time) {
+                feedbackMsg.textContent = "Please select a time.";
+                feedbackMsg.style.color = "var(--danger)";
+                return;
+            }
+            primeAudio();
+            try {
+                const res = await fetch('/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ time })
+                });
+                const data = await res.json();
+                targetAlarmTime = time;
+                statusPill.className = "status-pill active";
+                statusText.textContent = `Alarm set for ${time}`;
+                feedbackMsg.textContent = data.message;
+                feedbackMsg.style.color = "var(--text-muted)";
+                setTimeout(() => feedbackMsg.textContent = '', 4000);
+            } catch (e) {
+                feedbackMsg.textContent = "Could not set alarm.";
+            }
+        });
+
+        btnCancel.addEventListener('click', async () => {
+            try {
+                const res = await fetch('/cancel', { method: 'POST' });
+                const data = await res.json();
+                alarmTimeInput.value = '';
+                targetAlarmTime = null;
+                statusPill.className = "status-pill";
+                statusText.textContent = "No alarm set";
+                feedbackMsg.textContent = data.message;
+                feedbackMsg.style.color = "var(--text-muted)";
+                setTimeout(() => feedbackMsg.textContent = '', 3000);
+            } catch (e) {
+                feedbackMsg.textContent = "Error cancelling alarm.";
+            }
+        });
+
+        // Status Polling (Sync server state)
         setInterval(async () => {
             try {
-                const response = await fetch('http://localhost:3000/status');
-                const data = await response.json();
+                const res = await fetch('/status');
+                const data = await res.json();
 
                 if (data.ringing) {
-                    statusText.innerText = "ALARM ACTIVE. HACK TO DISARM.";
-                    statusText.className = "status ringing";
-                    if (!isAudioPlaying) {
-                        audio.play();
-                        isAudioPlaying = true;
+                    if (!isRinging) {
+                        isRinging = true;
+                        statusPill.className = "status-pill ringing";
+                        statusText.textContent = "ALARM RINGING";
+                        // Reveal challenge modal
+                        challengeOverlay.classList.remove('hidden');
+                        terminalInput.focus();
+                    }
+                    if (audio.paused) {
+                        audio.play().catch(() => {});
                     }
                 } else {
-                    statusText.innerText = "Dormant. Sleep well.";
-                    statusText.className = "status";
-                    if (isAudioPlaying) {
+                    if (isRinging) {
+                        isRinging = false;
+                        // Hide challenge modal
+                        challengeOverlay.classList.add('hidden');
                         audio.pause();
                         audio.currentTime = 0;
-                        isAudioPlaying = false;
+                        statusPill.className = "status-pill";
+                        statusText.textContent = "No alarm set";
+                    } else if (data.alarmTime) {
+                        statusPill.className = "status-pill active";
+                        statusText.textContent = `Alarm set for ${data.alarmTime}`;
+                    } else {
+                        statusPill.className = "status-pill";
+                        statusText.textContent = "No alarm set";
                     }
                 }
-            } catch (err) {
-                statusText.innerText = "Server Offline.";
+            } catch (e) {}
+        }, 1000);
+
+        // Challenge Terminal Simulator Logic
+        function printTerm(type, text) {
+            const line = document.createElement('div');
+            line.className = `term-line term-${type}`;
+            line.textContent = text;
+            terminalBody.appendChild(line);
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+        }
+
+        function quickFill(cmd) {
+            terminalInput.value = cmd;
+            terminalInput.focus();
+            if (!cmd.endsWith(' ')) {
+                executeCmd(cmd);
+                terminalInput.value = '';
             }
-        }, 2000); // Polls the server every 2 seconds
+        }
+
+        async function executeCmd(rawCmd) {
+            const cmd = rawCmd.trim();
+            if (!cmd) return;
+
+            const echo = document.createElement('div');
+            echo.className = 'term-line';
+            echo.innerHTML = `<span class="term-prompt">$</span> <span class="term-cmd">${escapeHtml(cmd)}</span>`;
+            terminalBody.appendChild(echo);
+
+            const parts = cmd.split(/\s+/);
+            const action = parts[0].toLowerCase();
+
+            switch (action) {
+                case 'help':
+                    printTerm('info', 'Challenge Commands:');
+                    printTerm('muted', '  clue              - Fetch the Base64 key payload');
+                    printTerm('muted', '  decode <b64>      - Decode Base64 string to key');
+                    printTerm('muted', '  unlock <key>      - Submit decoded key to disarm');
+                    printTerm('muted', '  status            - Check alarm status');
+                    printTerm('muted', '  clear             - Clear terminal display');
+                    break;
+
+                case 'status':
+                    try {
+                        const res = await fetch('/status');
+                        const data = await res.json();
+                        printTerm('info', `State: ${data.ringing ? 'RINGING (Locked)' : 'Dormant'}`);
+                    } catch (e) {
+                        printTerm('error', 'Status check failed.');
+                    }
+                    break;
+
+                case 'clue':
+                    try {
+                        const res = await fetch('/clue');
+                        const data = await res.json();
+                        if (data.payload) {
+                            printTerm('warn', `Payload: ${data.payload}`);
+                            printTerm('muted', `Hint: ${data.hint}`);
+                            printTerm('info', `Type: decode ${data.payload}`);
+                        } else {
+                            printTerm('muted', data.message || 'System dormant.');
+                        }
+                    } catch (e) {
+                        printTerm('error', 'Error fetching clue.');
+                    }
+                    break;
+
+                case 'decode':
+                case 'b64':
+                    if (parts.length < 2) {
+                        printTerm('warn', 'Usage: decode <base64>');
+                        break;
+                    }
+                    try {
+                        const decoded = atob(parts[1]);
+                        printTerm('success', `Decoded: "${decoded}"`);
+                        printTerm('info', `Type: unlock ${decoded}`);
+                    } catch (e) {
+                        printTerm('error', `Invalid Base64: ${parts[1]}`);
+                    }
+                    break;
+
+                case 'unlock':
+                case 'disarm':
+                    if (parts.length < 2) {
+                        printTerm('warn', 'Usage: unlock <key>');
+                        break;
+                    }
+                    try {
+                        const key = parts[1];
+                        const res = await fetch('/unlock', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ key })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            printTerm('success', `✔ ${data.message}`);
+                            printTerm('success', 'Alarm disarmed! Good morning!');
+                            setTimeout(() => {
+                                isRinging = false;
+                                challengeOverlay.classList.add('hidden');
+                                audio.pause();
+                                audio.currentTime = 0;
+                                statusPill.className = "status-pill";
+                                statusText.textContent = "No alarm set";
+                            }, 1200);
+                        } else {
+                            printTerm('error', `✖ ${data.error || 'Incorrect key.'}`);
+                        }
+                    } catch (e) {
+                        printTerm('error', 'Unlock request failed.');
+                    }
+                    break;
+
+                case 'clear':
+                    terminalBody.innerHTML = '';
+                    break;
+
+                default:
+                    printTerm('error', `Unknown command: "${cmd}". Type "help" for instructions.`);
+            }
+
+            terminalBody.scrollTop = terminalBody.scrollHeight;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        terminalInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = terminalInput.value;
+                if (val.trim()) {
+                    history.push(val);
+                    historyIndex = history.length;
+                    executeCmd(val);
+                    terminalInput.value = '';
+                }
+            } else if (e.key === 'ArrowUp') {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    terminalInput.value = history[historyIndex];
+                }
+                e.preventDefault();
+            } else if (e.key === 'ArrowDown') {
+                if (historyIndex < history.length - 1) {
+                    historyIndex++;
+                    terminalInput.value = history[historyIndex];
+                } else {
+                    historyIndex = history.length;
+                    terminalInput.value = '';
+                }
+                e.preventDefault();
+            }
+        });
+
+        // Initialize
+        loadTracks();
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((reg) => console.log('PWA ServiceWorker registered with scope:', reg.scope))
+                    .catch((err) => console.error('PWA ServiceWorker registration failed:', err));
+            });
+        }
     </script>
 </body>
 </html>

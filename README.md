@@ -1,68 +1,54 @@
-# Hacker Alarm - The Only Way to Wake Up
+# Alarm Room - Minimalist Wake-Up Challenge (PWA)
 
-## The Struggle is Real
-Let's be honest: my morning routine usually involves setting an alarm, hearing it, and then instantly turning it off while still half-asleep just to get "five more minutes." Those five minutes inevitably turn into an hour, and the cycle continues.
+A modern, flat alarm clock Progressive Web App (PWA) where turning off the alarm requires solving a challenge.
 
-This project is a direct response to that behavior. It's not just an alarm; it's a security challenge. To stop the noise, I have to wake up my brain enough to perform a series of API requests and "hack" the system. No more mindless tapping to snooze.
+---
 
-## How It Works
-This is a simple Express-based alarm system that requires a multi-step disarm process via an API.
+## Features
 
-1.  **Set the Alarm:** Use the web interface (running on `index.html`) to set a wake-up time.
-2.  **The Trigger:** When the time hits, the server generates a random hex passcode and starts playing `alarm-track.mp3`.
-3.  **The Lockdown:** Attempting to hit the `/disarm` endpoint will return a `423 LOCKED` status.
-4.  **The Clue:** You must request `/clue` to receive a Base64 encoded payload.
-5.  **The Hack:** Decode the payload (your brain starts working here!) and `POST` the result to `/unlock` with the key.
-6.  **Silence:** Only a correct key will stop the alarm.
+1. **Progressive Web App (PWA)**:
+   - Installable on desktop (Chrome, Edge) and mobile devices (Android, iOS).
+   - Standalone window display with no browser address bar.
+   - Offline caching via Service Worker (`sw.js`).
+   - Standard Web App Manifest (`manifest.json`) and app icons (SVG, 192x192, 512x512).
 
-## Technical Stack
-- **Backend:** Node.js with Express
-- **Frontend:** Vanilla JS & CSS (Glassmorphism design)
-- **Features:** 
-    - RESTful API for alarm control
-    - Base64 puzzle generation
-    - Real-time status polling
+2. **Focused Minimalist Clock**:
+   - Displays each user's **current local time** (rendered from client browser locale/timezone) with weekday and date.
+   - Clean, distraction-free interface centered on the screen.
+   - No header, no footer, no unnecessary icons or test buttons.
 
-## Command Line Usage
-If you prefer the terminal (or need to automate your wake-up hack), use these `curl` commands:
+3. **Alarm Audio Tracks**:
+   - Multiple basic built-in tracks:
+     - **Digital Beep** (`tracks/digital-beep.wav`)
+     - **Emergency Siren** (`tracks/emergency-siren.wav`)
+     - **Nuclear Klaxon** (`tracks/nuclear-klaxon.wav`)
+     - **Cyber Alert** (`tracks/cyber-alert.wav`)
+     - **Gentle Chime** (`tracks/gentle-chime.wav`)
+     - **Original Track** (`alarm-track.mp3`)
+   - Direct in-browser audio preview (Play / Stop).
 
-### 1. Set the Alarm
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"time":"07:30"}' http://localhost:3000/set
-```
+4. **Wake-Up Challenge System (Hidden Console)**:
+   - The terminal console is hidden by default during normal operation.
+   - When the alarm triggers, the **Challenge Screen** activates as a focused overlay.
+   - To silence the alarm, the user must solve the challenge:
+     1. Type `clue` to obtain the Base64 encoded key payload.
+     2. Type `decode <payload>` to extract the plaintext key.
+     3. Type `unlock <key>` to disarm and silence the alarm.
+   - Once solved, the challenge overlay dismisses automatically.
+   - Structured modularly to support additional challenge types in the future.
 
-### 2. Check Alarm Status
-```bash
-curl http://localhost:3000/status
-```
+5. **Anti-Close Tab Shield**:
+   - When the alarm is active, the browser tab triggers `beforeunload` warning protection to prevent accidental or half-asleep tab closure.
 
-### 3. Get the Clue (When Ringing)
-```bash
-curl http://localhost:3000/clue
-```
+---
 
-### 4. Unlock/Disarm
-Replace `YOUR_DECODED_KEY` with the result of decoding the Base64 payload from the clue.
-```bash
-curl -X POST -H "Content-Type: application/json" -d '{"key":"YOUR_DECODED_KEY"}' http://localhost:3000/unlock
-```
+## How to Run & Install as PWA
 
-## Setup
-1.  Clone the repository.
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-3.  Place your loudest wake-up track as `alarm-track.mp3` in the root directory.
-4.  Start the server:
-    ```bash
-    node server.js
-    ```
-5.  Open `http://localhost:3000` in your browser.
-
-## TODO
-- [x] Basic Express server and alarm logic
-- [x] Frontend for setting time and monitoring status
-- [x] Base64 "hacking" disarm flow
-- [ ] Add more complex puzzles
-- [ ] Implement "uncloseable" browser window features
+1. Start the server:
+   ```bash
+   node server.js
+   ```
+2. Open **`http://localhost:3000`** in your browser.
+3. To install as a desktop app:
+   - In Chrome or Edge, click the **Install** icon in the URL bar (or Menu &rarr; "Install Alarm Room").
+   - On mobile, tap "Add to Home Screen".
